@@ -1,0 +1,50 @@
+---
+# Webserver API Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webserver-api
+  labels:
+    app: webserver-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: webserver-api
+  template:
+    metadata:
+      labels:
+        app: webserver-api
+    spec:
+      containers:
+        - name: webserver-api
+          image: nginx:1.25
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: webserver-api-config

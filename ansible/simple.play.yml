@@ -1,0 +1,48 @@
+---
+- name: Install and configure Nginx
+  hosts: webserver
+  become: true
+  vars:
+    nginx_config_src: "{{ playbook_dir }}/roles/nginx/templates/nginx.conf.j2"
+    nginx_config_dest: "/etc/nginx/nginx.conf"
+
+  tasks:
+    - name: Install packages
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+        state: present
+        name:
+          - nginx
+
+    - name: Ensure Nginx is enabled
+      ansible.builtin.systemd:
+        name: nginx
+        enabled: true
+
+    - name: Copy main Nginx configuration
+      ansible.builtin.template:
+        src: "{{ nginx_config_src }}"
+        dest: "{{ nginx_config_dest }}"
+        backup: true
+        owner: root
+        group: root
+        mode: "0644"
+      register: config_result
+
+    - name: Test Nginx configuration
+      ansible.builtin.command: nginx -t
+      register: nginx_test
+      failed_when: nginx_test.rc != 0
+      changed_when: false
+
+    - name: Start Nginx service
+      ansible.builtin.systemd:
+        name: nginx
+        state: started
+
+    - name: Restart Nginx if configuration changed
+      ansible.builtin.systemd:
+        name: nginx
+        state: restarted
+      when: config_result.changed # noqa no-handler

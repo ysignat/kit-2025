@@ -1,0 +1,38 @@
+{
+    "folderId": "b1gd9grok106is5l1uuj",
+    "name": "webserver-testing-01",
+    "hostname": "webserver-testing-01",
+    "zoneId": "ru-central1-d",
+    "platformId": "standard-v2",
+    "resourcesSpec": {
+        "cores": 2,
+        "memory": 2147483648,
+        "coreFraction": 100
+    },
+    "bootDiskSpec": {
+        "mode": "READ_WRITE",
+        "autoDelete": true,
+        "diskSpec": {
+            "size": 21474836480,
+            "typeId": "network-ssd",
+            "imageId": "fd88h22en6kf0uhptpk5"
+        }
+    },
+    "networkInterfaceSpecs": {
+        "subnetId": "fl8i7ts7tjnm7m247r9q",
+        "primaryV4AddressSpec": {
+            "oneToOneNatSpec": {
+                "ipVersion": "IPV4"
+            }
+        }
+    },
+    "schedulingPolicy": {
+        "preemptible": true
+    },
+    "labels": {
+        "ansible_python_interpreter": "/usr/bin/python3.8",
+        "ansible_user": "yc-user",
+        "nginx_version": "1.28.0",
+        "ansible_ssh_private_key_file": ".ssh/ansible.ed25519"
+    }
+}

@@ -1,0 +1,102 @@
+#cloud-config
+datasource:
+  Ec2:
+    strict_id: false
+ssh_pwauth: false
+users:
+  - name: yc-user
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILbmjkh3uNbWoi1ibyfTzJpD+WErgoFGUwEy6QUqMYmm
+write_files:
+  - path: /srv/salt/top.sls
+    content: |
+      base:
+        'role:webserver':
+          - match: grain
+          - nginx
+    owner: root:root
+    encoding: text/plain
+    append: false
+    defer: false
+  - path: /srv/salt/nginx.sls
+    content: |
+      nginx_service:
+        pkg.installed:
+          - name: nginx
+        service.running:
+          - name: nginx
+          - enable: True
+          - watch:
+            - file: nginx_configuration
+          - require:
+              - pkg: nginx
+
+      nginx_configuration:
+        file.managed:
+          - name: /etc/nginx/nginx.conf
+          - template: jinja
+          - source: salt://nginx.conf.j2
+          - user: root
+          - group: root
+          - mode: '0644'
+    owner: root:root
+    encoding: text/plain
+    append: false
+    defer: false
+  - path: /srv/salt/nginx.conf.j2
+    content: |
+      user www-data;
+      worker_processes auto;
+      pid /run/nginx.pid;
+
+      events {
+          worker_connections 768;
+      }
+
+      http {
+          sendfile on;
+          tcp_nopush on;
+          tcp_nodelay on;
+          keepalive_timeout 65;
+          types_hash_max_size 2048;
+
+          ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3; # Dropping SSLv3, ref: POODLE
+          ssl_prefer_server_ciphers on;
+
+          access_log /var/log/nginx/access.log;
+          error_log /var/log/nginx/error.log;
+
+          gzip on;
+
+          server {
+              listen 80;
+              location / {
+                  add_header Content-Type 'text/html; charset=utf-8';
+                  return 200 '<!DOCTYPE html><html><body><h1>🌊 Вот вам случайное число для этого деплоя: {{ range(999) | random }}. Привет от $server_addr 🌊</h1></body></html>';
+              }
+          }
+      }
+    owner: root:root
+    encoding: text/plain
+    append: false
+    defer: false
+  - path: /etc/salt/master.d/override.conf
+    content: |
+      log_level: info
+      file_roots:
+        base:
+          - /srv/salt/
+      user: salt
+    owner: root:root
+    encoding: text/plain
+    append: false
+    defer: false
+runcmd:
+  - |
+    mkdir -p /etc/apt/keyrings
+    curl -fsSL https://packages.broadcom.com/artifactory/api/security/keypair/SaltProjectKey/public | sudo tee /etc/apt/keyrings/salt-archive-keyring.pgp
+    curl -fsSL https://github.com/saltstack/salt-install-guide/releases/latest/download/salt.sources | sudo tee /etc/apt/sources.list.d/salt.sources
+    apt update
+    apt install salt-master -y

@@ -1,0 +1,25 @@
+#cloud-config
+datasource:
+  Ec2:
+    strict_id: false
+ssh_pwauth: false
+users:
+  - name: yc-user
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILbmjkh3uNbWoi1ibyfTzJpD+WErgoFGUwEy6QUqMYmm
+runcmd:
+  - |
+    curl -LO https://github.com/kubernetes/minikube/releases/latest/download/minikube-linux-amd64
+    install minikube-linux-amd64 /usr/local/bin/minikube && rm minikube-linux-amd64
+    ln -s $(which minikube) /usr/local/bin/kubectl
+    curl -LO https://github.com/derailed/k9s/releases/download/v0.50.9/k9s_Linux_amd64.tar.gz
+    tar -xzf k9s_Linux_amd64.tar.gz k9s && rm k9s_Linux_amd64.tar.gz
+    install k9s /usr/local/bin/k9s && rm k9s
+    curl -LO https://get.helm.sh/helm-v3.17.4-linux-amd64.tar.gz
+    tar -xzf helm-v3.17.4-linux-amd64.tar.gz linux-amd64/helm && rm helm-v3.17.4-linux-amd64.tar.gz
+    install linux-amd64/helm /usr/local/bin/helm && rm -r linux-amd64
+    su yc-user
+    minikube start --force
+    minikube addons enable ingress

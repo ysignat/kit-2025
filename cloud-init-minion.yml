@@ -1,0 +1,35 @@
+#cloud-config
+datasource:
+  Ec2:
+    strict_id: false
+ssh_pwauth: false
+users:
+  - name: yc-user
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILbmjkh3uNbWoi1ibyfTzJpD+WErgoFGUwEy6QUqMYmm
+write_files:
+  - path: /etc/salt/minion.d/grains.conf
+    content: |
+      grains:
+        role: webserver
+    owner: root:root
+    encoding: text/plain
+    append: false
+    defer: false
+  - path: /etc/salt/minion.d/override.conf
+    content: |
+      master: webserver-testing-01.ru-central1.internal
+      log_level: info
+    owner: root:root
+    encoding: text/plain
+    append: false
+    defer: false
+runcmd:
+  - |
+    mkdir -p /etc/apt/keyrings
+    curl -fsSL https://packages.broadcom.com/artifactory/api/security/keypair/SaltProjectKey/public | sudo tee /etc/apt/keyrings/salt-archive-keyring.pgp
+    curl -fsSL https://github.com/saltstack/salt-install-guide/releases/latest/download/salt.sources | sudo tee /etc/apt/sources.list.d/salt.sources
+    apt update
+    apt install salt-minion -y
